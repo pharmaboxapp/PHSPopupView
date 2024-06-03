@@ -11,27 +11,20 @@
 import SwiftUI
 
 extension View {
-    func readHeight(onChange action: @escaping (CGFloat) -> ()) -> some View {
-        self.background(HeightReader())
-            .onPreferenceChange(HeightPreferenceKey.self, perform: action)
+    func readHeight(onChange action: @escaping (CGFloat) -> ()) -> some View { modifier(Modifier(onHeightChange: action)) }
+}
+
+// MARK: - Implementation
+fileprivate struct Modifier: ViewModifier {
+    let onHeightChange: (CGFloat) -> ()
+
+    func body(content: Content) -> some View { content
+        .background(
+            GeometryReader { geo -> Color in
+                DispatchQueue.main.async { onHeightChange(geo.size.height) }
+                return Color.clear
+            }
+        )
     }
 }
 
-// MARK: - HeightReader
-fileprivate struct HeightReader: View {
-    var body: some View {
-        GeometryReader { geometry in
-            Color.clear.preference(key: HeightPreferenceKey.self, value: geometry.size.height)
-        }
-    }
-}
-
-// MARK: - HeightPreferenceKey
-fileprivate struct HeightPreferenceKey: PreferenceKey {
-    typealias Value = CGFloat
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
